@@ -43,8 +43,6 @@ jobs:
         value: ${{ parameters.Location }}
       - name: ArmTemplateParameters
         value: ${{ parameters.ArmTemplateParameters }}
-      - name: ConvertToProjectReferenceOption
-        value: /p:UseProjectReferenceToAzureClients=true
 
     timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
 
