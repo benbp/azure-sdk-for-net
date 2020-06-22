@@ -6,13 +6,18 @@ resources:
       endpoint: azure
       ref: refs/tags/azure-sdk-tools_20200618.1
 
-parameters:
-  - name: jobs
-    type: object
-    default: []
-
 jobs:
   - ${{ each job in parameters.jobs }}:
     - template: /eng/pipelines/templates/jobs/live-test-job.yml
       parameters:
-        ${{ insert }}: ${{ job }}
+        PreSteps: ${{ job.PreSteps }}
+        PostSteps: ${{ job.PostSteps }}
+        EnvVars: ${{ job.EnvVars }}
+        MaxParallel: ${{ job.MaxParallel }}
+        BuildInParallel: ${{ job.BuildInParallel }}
+        TimeoutInMinutes: ${{ job.TimeoutInMinutes }}
+        ArmTemplateParameters: ${{ job.ArmTemplateParameters }}
+        Location: ${{ job.Location }}
+        SubscriptionConfiguration: ${{ job.SubscriptionConfiguration }}
+        ServiceDirectory: ${{ job.ServiceDirectory }}
+        ScenarioName: ${{ job.ScenarioName }}
