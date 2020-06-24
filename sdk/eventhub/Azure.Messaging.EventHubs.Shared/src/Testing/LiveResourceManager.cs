@@ -89,7 +89,8 @@ namespace Azure.Messaging.EventHubs.Tests
             {
                 var context = new AuthenticationContext(authority);
                 var credential = new ClientCredential(EventHubsTestEnvironment.Instance.ClientId, EventHubsTestEnvironment.Instance.ClientSecret);
-                var result = await context.AcquireTokenAsync(EventHubsTestEnvironment.Instance.ServiceManagementUrl, credential).ConfigureAwait(false);
+                var context = new AuthenticationContext($"{ EventHubsTestEnvironment.Instance.AuthorityHost }/{ EventHubsTestEnvironment.Instance.TenantId }");
+                AuthenticationResult result = await context.AcquireTokenAsync(EventHubsTestEnvironment.Instance.ServiceManagementUrl, credential).ConfigureAwait(false);
 
                 if ((string.IsNullOrEmpty(result?.AccessToken)))
                 {

@@ -29,16 +29,13 @@ namespace Microsoft.Azure.EventHubs.Tests
             new Lazy<string>(() => ReadEnvironmentVariable(TestConstants.EventHubsSecretEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
 
         private static readonly Lazy<string> AuthorityHostInstance =
-            new Lazy<string>(() => ReadOptionalEnvironmentVariable(TestConstants.AuthorityHostEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
+            new Lazy<string>(() => ReadEnvironmentVariable(TestConstants.AuthorityHostEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
 
         private static readonly Lazy<string> ServiceManagementUrlInstance =
-            new Lazy<string>(() => ReadOptionalEnvironmentVariable(TestConstants.ServiceManagementUrlEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
-
-        private static readonly Lazy<string> ResourceManagerInstance =
-            new Lazy<string>(() => ReadOptionalEnvironmentVariable(TestConstants.ResourceManagerEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
+            new Lazy<string>(() => ReadEnvironmentVariable(TestConstants.ServiceManagementUrlEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
 
         private static readonly Lazy<string> StorageEndpointSuffixInstance =
-           new Lazy<string>(() => ReadOptionalEnvironmentVariable(TestConstants.StorageEndpointSuffixEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
+           new Lazy<string>(() => ReadEnvironmentVariable(TestConstants.StorageEndpointSuffixEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
 
         private static readonly Lazy<EventHubScope.AzureResourceProperties> ActiveEventHubsNamespace =
             new Lazy<EventHubScope.AzureResourceProperties>(CreateNamespace, LazyThreadSafetyMode.ExecutionAndPublication);
@@ -68,13 +65,11 @@ namespace Microsoft.Azure.EventHubs.Tests
 
         internal static string EventHubsSecret => EventHubsSecretInstance.Value;
 
-        internal static string AuthorityHost => AuthorityHostInstance.Value ?? "https://login.microsoftonline.com/";
+        internal static string AuthorityHost => AuthorityHostInstance.Value;
 
-        internal static string ServiceManagementUrl => ServiceManagementUrlInstance.Value ?? "https://management.core.windows.net/";
+        internal static string ServiceManagementUrl => ServiceManagementUrlInstance.Value;
 
-        internal static Uri ResourceManager => new Uri(ResourceManagerInstance.Value ?? "https://management.azure.com/");
-
-        internal static string StorageEndpointSuffix => StorageEndpointSuffixInstance.Value ?? "core.windows.net";
+        internal static string StorageEndpointSuffix => StorageEndpointSuffixInstance.Value;
 
         internal static string GetEntityConnectionString(string entityName) =>
             new EventHubsConnectionStringBuilder(EventHubsConnectionString) { EntityPath = entityName }.ToString();

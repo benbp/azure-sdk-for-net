@@ -173,7 +173,7 @@ namespace Microsoft.Azure.EventHubs.Tests
                 var storageAccount = await CreateRetryPolicy<StorageManagement.StorageAccount>().ExecuteAsync(() => client.StorageAccounts.CreateAsync(resourceGroup, CreateName(), parameters));
 
                 var storageKeys = await CreateRetryPolicy<StorageManagement.StorageAccountListKeysResult>().ExecuteAsync(() => client.StorageAccounts.ListKeysAsync(resourceGroup, storageAccount.Name));
-                return new AzureResourceProperties(storageAccount.Name, $"DefaultEndpointsProtocol=https;AccountName={ storageAccount.Name };AccountKey={ storageKeys.Keys[0].Value };EndpointSuffix={ TestUtility.StorageEndpointSuffix }", true);
+                return new AzureResourceProperties(storageAccount.Name, $"DefaultEndpointsProtocol=https;AccountName={ storageAccount.Name };AccountKey={ storageKeys.Keys[0].Value };EndpointSuffix={ TestUtility.StorageEndpointSuffix }");
             }
         }
 
@@ -274,8 +274,8 @@ namespace Microsoft.Azure.EventHubs.Tests
             if ((token == null) || (token.ExpiresOn <= DateTimeOffset.UtcNow.Add(CredentialRefreshBuffer)))
             {
                 var credential = new ClientCredential(TestUtility.EventHubsClient, TestUtility.EventHubsSecret);
-                var context = new AuthenticationContext($"{ TestUtility.AuthorityHost }{ TestUtility.EventHubsTenant }");
-                var result = await context.AcquireTokenAsync(TestUtility.ServiceManagementUrl, credential).ConfigureAwait(false);
+                var context = new AuthenticationContext($"{ TestUtility.AuthorityHost }/{ TestUtility.EventHubsTenant }");
+                var result = await context.AcquireTokenAsync(TestUtility.ServiceManagementUrl, credential);
 
                 if ((String.IsNullOrEmpty(result?.AccessToken)))
                 {
