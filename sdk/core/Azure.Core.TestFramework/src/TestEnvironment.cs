@@ -134,21 +134,6 @@ namespace Azure.Core.TestFramework
         /// </summary>
         public string ClientSecret => GetVariable("CLIENT_SECRET");
 
-        /// <summary>
-        ///   The authority host of the cloud to use during Live tests. Recorded.
-        /// </summary>
-        public string AuthorityHost => GetRecordedVariable("AZURE_AUTHORITY_HOST");
-
-        /// <summary>
-        ///   The service management Url of the cloud to use during Live tests. Recorded.
-        /// </summary>
-        public string ServiceManagementUrl => GetRecordedVariable("SERVICE_MANAGEMENT_URL");
-
-        /// <summary>
-        ///   The storage account endpoint suffix of the cloud to use during Live tests. Recorded.
-        /// </summary>
-        public string StorageEndpointSuffix => GetRecordedVariable("STORAGE_ENDPOINT_SUFFIX");
-
         public TokenCredential Credential
         {
             get
@@ -164,7 +149,15 @@ namespace Azure.Core.TestFramework
                 }
                 else
                 {
-                    _credential = new ClientSecretCredential(
+                    // Don't take a hard dependency on Azure.Identity
+                    var type = Type.GetType("Azure.Identity.ClientSecretCredential, Azure.Identity");
+                    if (type == null)
+                    {
+                        throw new InvalidOperationException("Azure.Identity must be referenced to use Credential in Live environment.");
+                    }
+
+                    _credential = (TokenCredential)Activator.CreateInstance(
+                        type,
                         GetVariable("TENANT_ID"),
                         GetVariable("CLIENT_ID"),
                         GetVariable("CLIENT_SECRET")
