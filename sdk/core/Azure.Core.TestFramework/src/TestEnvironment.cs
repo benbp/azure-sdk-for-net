@@ -130,7 +130,12 @@ namespace Azure.Core.TestFramework
         public string ClientId => GetRecordedVariable("CLIENT_ID");
 
         /// <summary>
-        ///   The client secret of the Azure Active Directory service principal to use during Live tests. Not recorded.
+        ///   The resource manager of the cloud to use during Live tests. Recorded.
+        /// </summary>
+        public string ResourceManager => GetRecordedVariable("RESOURCE_MANAGER");
+
+        /// <summary>
+        ///   The storage account endpoint suffix of the cloud to use during Live tests. Recorded.
         /// </summary>
         public string ClientSecret => GetVariable("CLIENT_SECRET");
 

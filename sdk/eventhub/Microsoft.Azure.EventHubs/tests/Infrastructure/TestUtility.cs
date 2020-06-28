@@ -28,6 +28,18 @@ namespace Microsoft.Azure.EventHubs.Tests
         private static readonly Lazy<string> EventHubsSecretInstance =
             new Lazy<string>(() => ReadEnvironmentVariable(TestConstants.EventHubsSecretEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
 
+        private static readonly Lazy<string> AuthorityHostInstance =
+            new Lazy<string>(() => ReadEnvironmentVariable(TestConstants.AuthorityHostEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
+
+        private static readonly Lazy<string> ServiceManagementUrlInstance =
+            new Lazy<string>(() => ReadEnvironmentVariable(TestConstants.ServiceManagementUrlEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
+
+        private static readonly Lazy<string> ResourceManagerInstance =
+            new Lazy<string>(() => ReadEnvironmentVariable(TestConstants.ResourceManagerEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
+
+        private static readonly Lazy<string> StorageEndpointSuffixInstance =
+           new Lazy<string>(() => ReadEnvironmentVariable(TestConstants.StorageEndpointSuffixEnvironmentVariableName), LazyThreadSafetyMode.PublicationOnly);
+
         private static readonly Lazy<EventHubScope.AzureResourceProperties> ActiveEventHubsNamespace =
             new Lazy<EventHubScope.AzureResourceProperties>(CreateNamespace, LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -63,10 +75,9 @@ namespace Microsoft.Azure.EventHubs.Tests
         {
             TestUtility.Log($"Starting to send {numberOfMessages} messages.");
 
-            for (int i = 0; i < numberOfMessages; i++)
-            {
-                await ehClient.SendAsync(new EventData(Encoding.UTF8.GetBytes("Hello Event Hubs!")));
-            }
+        internal static string ResourceManager => ResourceManagerInstance.Value;
+
+        internal static string StorageEndpointSuffix => StorageEndpointSuffixInstance.Value;
 
             TestUtility.Log("Sends done.");
         }
