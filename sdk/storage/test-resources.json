@@ -17,7 +17,21 @@
             "metadata": {
                 "description": "The principal to assign the role to. This is application object id."
             }
-        }
+        },
+        "storageEndpointSuffix": {
+            "type": "string",
+            "defaultValue": "core.windows.net",
+            "metadata": {
+                "description": "The storage endpoint suffix. Its value will be changed for different clouds test."
+            }
+        },
+        "azureAuthorityHost": {
+            "type": "string",
+            "defaultValue": "https://login.microsoftonline.com",
+            "metadata": {
+                "description": "The azure authority host. Its value will be changed for different clouds test."
+            }
+        }      
     },
     "variables": {
         "mgmtApiVersion": "2019-06-01",
@@ -393,33 +407,13 @@
       "type": "string",
       "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('dataLakeAccountName')), variables('mgmtApiVersion')).keys[0].value]"
     },
-    "SOFT_DELETE_ACCOUNT_NAME": {
-      "type": "string",
-      "value": "[variables('softDeleteAccountName')]"
+    "STORAGE_ENDPOINT_SUFFIX": {
+        "type": "string",
+        "value": "[parameters('storageEndpointSuffix')]"
     },
-    "SOFT_DELETE_ACCOUNT_KEY": {
-      "type": "string",
-      "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('softDeleteAccountName')), variables('mgmtApiVersion')).keys[0].value]"
-    },
-    "PREMIUM_FILE_STORAGE_ACCOUNT_NAME": {
-      "type": "string",
-      "value": "[variables('premiumFileAccountName')]"
-    },
-    "PREMIUM_FILE_STORAGE_ACCOUNT_KEY": {
-      "type": "string",
-      "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('premiumFileAccountName')), variables('mgmtApiVersion')).keys[0].value]"
-    },
-    "AZUREWEBJOBSSTORAGE": {
-      "type": "string",
-      "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('webjobsPrimaryAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('webjobsPrimaryAccountName')), variables('mgmtApiVersion')).keys[0].value,';EndpointSuffix=core.windows.net')]"
-    },
-    "AZUREWEBJOBSSECONDARYSTORAGE": {
-      "type": "string",
-      "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('webjobsSecondaryAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('webjobsSecondaryAccountName')), variables('mgmtApiVersion')).keys[0].value,';EndpointSuffix=core.windows.net')]"
-    },
-    "KEYVAULT_URI":{
-      "type": "string",
-      "value": "[variables('azureKeyVaultUrl')]"
+    "AZURE_AUTHORITY_HOST": {
+        "type": "string",
+        "value": "[parameters('azureAuthorityHost')]"
     }
   }
 }
