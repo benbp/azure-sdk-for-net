@@ -73,13 +73,8 @@ namespace Azure.Search.Documents.Tests
         public string SearchCognitiveKey => GetRecordedVariable(CognitiveKeyVariableName);
 
         /// <summary>
-        /// Gets the optional Key Vault URL used for double-encrypted indexes.
+        /// Gets the storage account suffix for external data sources.
         /// </summary>
-        public string KeyVaultUrl => GetRecordedOptionalVariable("SEARCH_KEYVAULT_URL");
-
-        /// <summary>
-        /// Gets the recorded value for the CLIENT_ID, which gets sanitized as part of the payload.
-        /// </summary>
-        public string RecordedClientSecret => GetRecordedVariable(ClientSecretVariableName);
+        public string StorageEndpointSuffix => GetOptionalVariable("STORAGE_ENDPOINT_SUFFIX") ?? "core.windows.net";
     }
 }

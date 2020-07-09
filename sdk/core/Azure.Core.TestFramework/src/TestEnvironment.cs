@@ -114,31 +114,6 @@ namespace Azure.Core.TestFramework
         /// </summary>
         public string ServiceManagementUrl => GetRecordedOptionalVariable("SERVICE_MANAGEMENT_URL");
 
-        /// <summary>
-        ///   The URL of the Azure Authority host to be used for authentication. Recorded.
-        /// </summary>
-        public string AuthorityHostUrl => GetRecordedOptionalVariable("AZURE_AUTHORITY_HOST");
-
-        /// <summary>
-        ///   The suffix for Azure Storage accounts for the active cloud environment, such as "core.windows.net".  Recorded.
-        /// </summary>
-        public string StorageEndpointSuffix => GetRecordedOptionalVariable("STORAGE_ENDPOINT_SUFFIX");
-
-        /// <summary>
-        ///   The client id of the Azure Active Directory service principal to use during Live tests. Recorded.
-        /// </summary>
-        public string ClientId => GetRecordedVariable("CLIENT_ID");
-
-        /// <summary>
-        ///   The resource manager of the cloud to use during Live tests. Recorded.
-        /// </summary>
-        public string ResourceManager => GetRecordedVariable("RESOURCE_MANAGER");
-
-        /// <summary>
-        ///   The storage account endpoint suffix of the cloud to use during Live tests. Recorded.
-        /// </summary>
-        public string ClientSecret => GetVariable("CLIENT_SECRET");
-
         public TokenCredential Credential
         {
             get
