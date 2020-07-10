@@ -69,7 +69,7 @@ namespace Azure.Messaging.ServiceBus.Tests
 
             string CreateName() => $"net-servicebus-{ Guid.NewGuid().ToString("D").Substring(0, 30) }";
 
-            using (var client = new ServiceBusManagementClient(ResourceManagerUri, new TokenCredentials(token)) { SubscriptionId = azureSubscription })
+            using (var client = new ServiceBusManagementClient(ServiceBusTestEnvironment.Instance.ResourceManager, new TokenCredentials(token)) { SubscriptionId = azureSubscription })
             {
                 var location = await QueryResourceGroupLocationAsync(token, resourceGroup, azureSubscription).ConfigureAwait(false);
 
@@ -94,7 +94,7 @@ namespace Azure.Messaging.ServiceBus.Tests
             var resourceGroup = ServiceBusTestEnvironment.Instance.ResourceGroup;
             var token = await AquireManagementTokenAsync().ConfigureAwait(false);
 
-            using (var client = new ServiceBusManagementClient(ResourceManagerUri, new TokenCredentials(token)) { SubscriptionId = azureSubscription })
+            using (var client = new ServiceBusManagementClient(ServiceBusTestEnvironment.Instance.ResourceManager, new TokenCredentials(token)) { SubscriptionId = azureSubscription })
             {
                 await CreateRetryPolicy().ExecuteAsync(() => client.Namespaces.DeleteAsync(resourceGroup, namespaceName)).ConfigureAwait(false);
             }
@@ -143,7 +143,7 @@ namespace Azure.Messaging.ServiceBus.Tests
 
             string CreateName() => $"{ Guid.NewGuid().ToString("D").Substring(0, 13) }-{ caller }";
 
-            using (var client = new ServiceBusManagementClient(ResourceManagerUri, new TokenCredentials(token)) { SubscriptionId = azureSubscription })
+            using (var client = new ServiceBusManagementClient(ServiceBusTestEnvironment.Instance.ResourceManager, new TokenCredentials(token)) { SubscriptionId = azureSubscription })
             {
                 var queueParameters = new SBQueue(enablePartitioning: enablePartitioning, requiresSession: enableSession, maxSizeInMegabytes: 1024, lockDuration: lockDuration);
                 var queue = await CreateRetryPolicy<SBQueue>().ExecuteAsync(() => client.Queues.CreateOrUpdateAsync(resourceGroup, serviceBusNamespace, CreateName(), queueParameters)).ConfigureAwait(false);
@@ -185,7 +185,7 @@ namespace Azure.Messaging.ServiceBus.Tests
             var serviceBusNamespace = ServiceBusTestEnvironment.Instance.ServiceBusNamespace;
             var token = await AquireManagementTokenAsync().ConfigureAwait(false);
 
-            using (var client = new ServiceBusManagementClient(ResourceManagerUri, new TokenCredentials(token)) { SubscriptionId = azureSubscription })
+            using (var client = new ServiceBusManagementClient(ServiceBusTestEnvironment.Instance.ResourceManager, new TokenCredentials(token)) { SubscriptionId = azureSubscription })
             {
                 // If there was an override and the force flag is not set for creation, then build a scope for the
                 // specified topic.  Query the topic resource to build the list of its subscriptions for the scope.
@@ -239,7 +239,7 @@ namespace Azure.Messaging.ServiceBus.Tests
                                                                           string resourceGroupName,
                                                                           string subscriptionId)
         {
-            using var client = new ResourceManagementClient(ResourceManagerUri, new TokenCredentials(accessToken)) { SubscriptionId = subscriptionId };
+            using var client = new ResourceManagementClient(ServiceBusTestEnvironment.Instance.ResourceManager, new TokenCredentials(accessToken)) { SubscriptionId = subscriptionId };
             {
                 ResourceGroup resourceGroup = await CreateRetryPolicy<ResourceGroup>().ExecuteAsync(() => client.ResourceGroups.GetAsync(resourceGroupName));
                 return resourceGroup.Location;
@@ -266,6 +266,7 @@ namespace Azure.Messaging.ServiceBus.Tests
             {
                 var context = new AuthenticationContext(authority);
                 var credential = new ClientCredential(ServiceBusTestEnvironment.Instance.ClientId, ServiceBusTestEnvironment.Instance.ClientSecret);
+                var context = new AuthenticationContext($"{ ServiceBusTestEnvironment.Instance.AuthorityHost }/{ ServiceBusTestEnvironment.Instance.TenantId }");
                 var result = await context.AcquireTokenAsync(ServiceBusTestEnvironment.Instance.ServiceManagementUrl, credential);
 
                 if ((string.IsNullOrEmpty(result?.AccessToken)))
@@ -487,7 +488,7 @@ namespace Azure.Messaging.ServiceBus.Tests
                     var resourceGroup = ServiceBusTestEnvironment.Instance.ResourceGroup;
                     var token = await AquireManagementTokenAsync().ConfigureAwait(false);
 
-                    using var client = new ServiceBusManagementClient(ResourceManagerUri, new TokenCredentials(token)) { SubscriptionId = azureSubscription };
+                    using var client = new ServiceBusManagementClient(ServiceBusTestEnvironment.Instance.ResourceManager, new TokenCredentials(token)) { SubscriptionId = azureSubscription };
                     await CreateRetryPolicy().ExecuteAsync(() => client.Queues.DeleteAsync(resourceGroup, NamespaceName, QueueName)).ConfigureAwait(false);
                 }
                 catch
@@ -584,7 +585,7 @@ namespace Azure.Messaging.ServiceBus.Tests
                     var resourceGroup = ServiceBusTestEnvironment.Instance.ResourceGroup;
                     var token = await AquireManagementTokenAsync().ConfigureAwait(false);
 
-                    using var client = new ServiceBusManagementClient(ResourceManagerUri, new TokenCredentials(token)) { SubscriptionId = azureSubscription };
+                    using var client = new ServiceBusManagementClient(ServiceBusTestEnvironment.Instance.ResourceManager, new TokenCredentials(token)) { SubscriptionId = azureSubscription };
                     await CreateRetryPolicy().ExecuteAsync(() => client.Topics.DeleteAsync(resourceGroup, NamespaceName, TopicName)).ConfigureAwait(false);
                 }
                 catch

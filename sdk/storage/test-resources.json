@@ -45,7 +45,14 @@
             "metadata": {
                 "description": "Key Vault SKU to deploy. The default is 'premium'"
             }
-        }      
+        },
+        "enableStorageVersioning": {
+            "type": "bool",
+            "metadata": {
+              "description": "Enable Versioning enabled setting, default value is true"
+            },
+            "defaultValue": true
+        }
     },
     "variables": {
         "mgmtApiVersion": "2019-06-01",
@@ -81,7 +88,16 @@
             "virtualNetworkRules": [],
             "ipRules": [],
             "defaultAction": "Allow"
-        }
+        },
+        "versioningEnableProperties": [
+          {
+            "isVersioningEnabled": true
+          }],
+        "nullProperties": [
+          {
+          }
+        ],
+        "locationsProperty": "[if(parameters('enableStorageVersioning'), variables('versioningEnableProperties'), variables('nullProperties'))]"
     },
     "resources": [
         {
@@ -141,17 +157,7 @@
             "type": "Microsoft.Storage/storageAccounts/blobServices",
             "apiVersion": "[variables('mgmtApiVersion')]",
             "name": "[concat(variables('primaryAccountName'), '/default')]",
-            "properties": {
-                "isVersioningEnabled": true,
-                "lastAccessTimeTrackingPolicy": {
-                    "enable": true,
-                    "name": "AccessTimeTracking",
-                    "trackingGranularityInDays": 1,
-                    "blobType": [
-                        "blockBlob"
-                    ]
-                }
-            },
+            "properties": "[variables('locationsProperty')]",
             "dependsOn": [
                 "[variables('primaryAccountName')]"
             ]

@@ -33,6 +33,15 @@ namespace Azure.Messaging.ServiceBus.Tests
         /// <summary>The active Service Bus namespace for this test run, lazily created.</summary>
         private readonly Lazy<ServiceBusConnectionStringProperties> ParsedConnectionString;
 
+        /// <summary>The name of the environment variable used to specify azure authority host to use for all tests.</summary>
+        private const string AzureAuthorityHostEnvironmentVariable = "AZURE_AUTHORITY_HOST";
+
+        /// <summary>The name of the environment variable used to specify service management url to use for all tests.</summary>
+        private const string ServiceManagementUrlEnvironmentVariable = "SERVICE_MANAGEMENT_URL";
+
+        /// <summary>The name of the environment variable used to specify resource manager to use for all tests.</summary>
+        private const string ResourceManagerEnvironmentVariable = "RESOURCE_MANAGER";
+
         /// <summary>
         ///   Indicates whether or not an ephemeral namespace was created for the current test execution.
         /// </summary>
@@ -131,6 +140,21 @@ namespace Azure.Messaging.ServiceBus.Tests
             ActiveServiceBusNamespace = new Lazy<NamespaceProperties>(EnsureServiceBusNamespace, LazyThreadSafetyMode.ExecutionAndPublication);
             ParsedConnectionString = new Lazy<ServiceBusConnectionStringProperties>(() => ServiceBusConnectionStringProperties.Parse(ServiceBusConnectionString), LazyThreadSafetyMode.ExecutionAndPublication);
         }
+
+        /// <summary>
+        ///   The authority host of the cloud to use during Live tests.
+        /// </summary>
+        public string AuthorityHost => GetOptionalVariable(AzureAuthorityHostEnvironmentVariable) ?? "https://login.microsoftonline.com";
+
+        /// <summary>
+        ///   The service management Url of the cloud to use during Live tests.
+        /// </summary>
+        public string ServiceManagementUrl => GetOptionalVariable(ServiceManagementUrlEnvironmentVariable) ?? "https://management.core.windows.net/";
+
+        /// <summary>
+        ///   The resource manager of the cloud to use during Live tests.
+        /// </summary>
+        public Uri ResourceManager => new Uri(GetOptionalVariable(ResourceManagerEnvironmentVariable) ?? "https://management.azure.com/");
 
         /// <summary>
         ///   Builds a connection string for a specific Service Bus entity instance under the namespace used for
