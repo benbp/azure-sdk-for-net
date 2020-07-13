@@ -13,5 +13,6 @@ namespace Azure.Extensions.AspNetCore.DataProtection.Blobs.Tests
 
         public string StorageAccountName => GetVariable("BLOB_STORAGE_ACCOUNT_NAME");
         public string StorageAccountKey => GetVariable("BLOB_STORAGE_ACCOUNT_KEY");
+        public string StorageEndpointSuffix => GetOptionalVariable("BLOB_STORAGE_ENDPOINT_SUFFIX") ?? "core.windows.net";
     }
 }

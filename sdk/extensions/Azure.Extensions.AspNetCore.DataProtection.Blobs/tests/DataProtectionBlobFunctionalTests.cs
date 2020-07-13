@@ -19,6 +19,17 @@ namespace Azure.Extensions.AspNetCore.DataProtection.Blobs.Tests
         [Test]
         public async Task PersistsKeysToAzureBlob()
         {
+            var client = new BlobServiceClient(
+                new Uri($"https://{DataProtectionTestEnvironment.Instance.StorageAccountName}.blob.{DataProtectionTestEnvironment.Instance.StorageEndpointSuffix}/"),
+                new StorageSharedKeyCredential(
+                    DataProtectionTestEnvironment.Instance.StorageAccountName,
+                    DataProtectionTestEnvironment.Instance.StorageAccountKey));
+
+            var blobContainerClient = client.GetBlobContainerClient("testcontainer");
+            await blobContainerClient.CreateIfNotExistsAsync();
+
+            var blobClient = blobContainerClient.GetBlobClient("testblob");
+
             var serviceCollection = new ServiceCollection();
 
             serviceCollection.AddDataProtection().PersistKeysToAzureBlobStorage(await GetBlobClient("testblob"));
