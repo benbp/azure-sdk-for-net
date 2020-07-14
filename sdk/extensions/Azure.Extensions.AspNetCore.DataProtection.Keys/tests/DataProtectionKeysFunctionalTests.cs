@@ -22,7 +22,14 @@ namespace Azure.Extensions.AspNetCore.DataProtection.Keys.Tests
         [Test]
         public async Task ProtectsKeysWithKeyVaultKey()
         {
-            var client = new KeyClient(new Uri(TestEnvironment.KeyVaultUrl), TestEnvironment.Credential);
+            TokenCredentialOptions tokenCredentialOptions = new TokenCredentialOptions();
+            tokenCredentialOptions.AuthorityHost = new Uri(Environment.GetEnvironmentVariable("AZURE_AUTHORITY_HOST"));
+            var credential = new ClientSecretCredential(
+                DataProtectionTestEnvironment.Instance.TenantId,
+                DataProtectionTestEnvironment.Instance.ClientId,
+                DataProtectionTestEnvironment.Instance.ClientSecret,
+                tokenCredentialOptions);
+            var client = new KeyClient(new Uri(DataProtectionTestEnvironment.Instance.KeyVaultUrl), credential);
             var key = await client.CreateKeyAsync("TestEncryptionKey", KeyType.Rsa);
 
             var serviceCollection = new ServiceCollection();
