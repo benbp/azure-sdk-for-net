@@ -13,14 +13,17 @@ namespace Azure.Data.Tables.Tests
         }
 
         // Storage Tables
-        public const string DefaultStorageSuffix = "core.windows.net";
-        public string PrimaryStorageAccountKey => GetRecordedVariable("TABLES_PRIMARY_STORAGE_ACCOUNT_KEY", options => options.IsSecret(SanitizedValue.Base64));
+        public const string PrimaryStorageKeyEnvironmentVariableName = "TABLES_PRIMARY_STORAGE_ACCOUNT_KEY";
+        public string PrimaryStorageAccountKey => GetRecordedVariable(PrimaryStorageKeyEnvironmentVariableName);
         public string StorageAccountName => GetRecordedVariable("TABLES_STORAGE_ACCOUNT_NAME");
-        public string StorageUri => $"https://{StorageAccountName}.table.{StorageEndpointSuffix ?? DefaultStorageSuffix}";
+        public string TablesStorageEndpointSuffix => GetOptionalVariable("TABLES_STORAGE_ENDPOINT_SUFFIX") ?? "table.core.windows.net";
+        public string StorageUri => $"https://{StorageAccountName}.{TablesStorageEndpointSuffix}";
 
-        public string PrimaryStorageAccountKey => GetRecordedVariable(PrimaryKeyEnvironmentVariableName);
-        public string AccountName => GetRecordedVariable("TABLES_STORAGE_ACCOUNT_NAME");
-        public string TablesEndpointSuffix => GetOptionalVariable("TABLES_STORAGE_ENDPOINT_SUFFIX");
-        public string StorageUri => !string.IsNullOrEmpty(TablesEndpointSuffix) ? $"https://{AccountName}.{TablesEndpointSuffix}" : string.Format(StorageUriFormat, AccountName);
+        // Cosmos Tables
+        public const string PrimaryCosmosKeyEnvironmentVariableName = "TABLES_PRIMARY_COSMOS_ACCOUNT_KEY";
+        public string PrimaryCosmosAccountKey => GetRecordedVariable(PrimaryCosmosKeyEnvironmentVariableName);
+        public string CosmosAccountName => GetRecordedVariable("TABLES_COSMOS_ACCOUNT_NAME");
+        public string TablesComsmosEndpointSuffix => GetOptionalVariable("TABLES_COSMOS_ENDPOINT_SUFFIX") ?? "table.cosmos.azure.com";
+        public string CosmosUri => $"https://{CosmosAccountName}.{TablesComsmosEndpointSuffix}";
     }
 }
