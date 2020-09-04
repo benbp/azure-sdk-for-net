@@ -235,7 +235,6 @@ namespace Azure.Identity.Tests
                 return CreateTokenResponse(code, token);
 
             }
-            Assert.AreEqual("aaaa", $"{testEnvironment.AuthorityHostUrl}/organizations/oauth2/v2.0/devicecode");
             throw new InvalidOperationException();
         }
 
