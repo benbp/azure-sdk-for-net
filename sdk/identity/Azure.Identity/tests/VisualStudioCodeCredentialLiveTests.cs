@@ -50,6 +50,7 @@ namespace Azure.Identity.Tests
         [Test]
         public async Task AuthenticateWithVscCredential_BrokenSettingsFile()
         {
+            Assert.AreEqual("aaa",$"{TestEnvironment.AuthorityHostUrl}/{TestEnvironment.TestTenantId}/");
             var refreshToken = await CredentialTestHelpers.GetRefreshTokenAsync(TestEnvironment, Mode);
             var fileSystemService = new TestFileSystemService { ReadAllHandler = s => "{a,}" };
             var vscAdapter = new TestVscAdapter(ExpectedServiceName, "AzureCloud", refreshToken);
