@@ -67,8 +67,8 @@ namespace Azure.Identity.Tests
             var tenantId = TestEnvironment.IdentityTenantId;
             var username = TestEnvironment.Username;
             var password = TestEnvironment.TestPassword;
-
-            var options = InstrumentClientOptions(new TokenCredentialOptions());
+            Assert.AreEqual("aa", username);
+            var options = Recording.InstrumentClientOptions(new TokenCredentialOptions());
 
             var cred = InstrumentClient(new UsernamePasswordCredential(username, password, tenantId, ClientId, options));
 
@@ -83,8 +83,8 @@ namespace Azure.Identity.Tests
             var tenantId = TestEnvironment.IdentityTenantId;
             var username = TestEnvironment.Username;
             var password = TestEnvironment.TestPassword;
-
-            var options = InstrumentClientOptions(new TokenCredentialOptions());
+            Assert.AreEqual("aa", tenantId);
+            var options = Recording.InstrumentClientOptions(new TokenCredentialOptions());
 
             var cred = InstrumentClient(new UsernamePasswordCredential(username, password, tenantId, ClientId, options));
 
@@ -102,8 +102,8 @@ namespace Azure.Identity.Tests
             var tenantId = TestEnvironment.IdentityTenantId;
             var username = TestEnvironment.Username;
             var password = TestEnvironment.TestPassword;
-
-            var options = InstrumentClientOptions(new TokenCredentialOptions());
+            Assert.AreEqual("aa", Environment.GetEnvironmentVariable("AZURE_IDENTITY_TEST_PASSWORD"));
+            var options = Recording.InstrumentClientOptions(new TokenCredentialOptions());
 
             var cred = InstrumentClient(new UsernamePasswordCredential(username, password, tenantId, ClientId, options));
 
