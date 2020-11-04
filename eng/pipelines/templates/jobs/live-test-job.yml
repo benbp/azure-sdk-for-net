@@ -54,7 +54,7 @@ jobs:
         value: ${{ parameters.ArmTemplateParameters }}
       - name: ConvertToProjectReferenceOption
         value: /p:UseProjectReferenceToAzureClients=true
-        
+
     timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
 
     strategy:
