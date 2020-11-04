@@ -8,6 +8,7 @@ extends:
       - ServiceDirectory: eventhub
         MaxParallel: 6
         TimeoutInMinutes: 120
+	      TestCanary: true
         ScenarioName: AzureCloud
         SubscriptionConfiguration: $(sub-config-azure-cloud-test-resources)
         ArmTemplateParameters: "@{ storageEndpointSuffix = 'core.windows.net' }"
