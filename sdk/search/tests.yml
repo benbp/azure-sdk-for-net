@@ -7,6 +7,7 @@ extends:
       # Azure Cloud
       - ServiceDirectory: search
         MaxParallel: 2
+        TimeoutInMinutes: 120
         ScenarioName: AzureCloud
         SubscriptionConfiguration: $(sub-config-azure-cloud-test-resources)
         EnvVars:
@@ -17,6 +18,7 @@ extends:
       # AzureUSGovernment
       - ServiceDirectory: search
         MaxParallel: 1
+        TimeoutInMinutes: 120
         ScenarioName: AzureUSGovernment
         SubscriptionConfiguration: $(sub-config-gov-test-resources)
         EnvVars:
@@ -27,6 +29,7 @@ extends:
       # AzureChinaCloud
       - ServiceDirectory: search
         MaxParallel: 1
+        TimeoutInMinutes: 120
         ScenarioName: AzureChinaCloud
         SubscriptionConfiguration: $(sub-config-cn-test-resources)
         EnvVars:
