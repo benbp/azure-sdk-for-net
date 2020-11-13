@@ -3,8 +3,5 @@ trigger: none
 extends:
   template: ../../eng/pipelines/templates/stages/archetype-sdk-tests.yml
   parameters:
-    ServiceDirectory: search
-    TimeoutInMinutes: 120
-    MaxParallel: 2
     EnvVars:
       AZURE_SEARCH_TEST_MODE: Live

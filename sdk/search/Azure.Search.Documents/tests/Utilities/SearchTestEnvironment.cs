@@ -81,5 +81,9 @@ namespace Azure.Search.Documents.Tests
         /// Gets the recorded value for the CLIENT_ID, which gets sanitized as part of the payload.
         /// </summary>
         public string RecordedClientSecret => GetRecordedVariable(ClientSecretVariableName);
+
+        /// Gets the search service suffix.
+        /// </summary>
+        public string SearchEndpointSuffix => GetRecordedOptionalVariable("SEARCH_ENDPOINT_SUFFIX") ?? "search.windows.net";
     }
 }
