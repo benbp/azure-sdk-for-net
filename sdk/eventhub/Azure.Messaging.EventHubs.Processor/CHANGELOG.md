@@ -1,6 +1,41 @@
 # Release History
 
-## 5.3.0-beta.2 (Unreleased)
+## 5.3.0-beta.5 (Unreleased)
+
+
+## 5.3.0-beta.4 (2020-11-10)
+
+### Changes
+
+#### New Features
+
+- Additional options for tuning load balancing have been added to the `EventProcessorClientOptions`.
+
+- Documentation used for auto-completion via Intellisense and other tools has been enhanced in many areas, addressing gaps and commonly asked questions.
+
+#### Key Bug Fixes
+
+- The calculation for authorization token expiration has been fixed, resulting in fewer token refreshes and network requests.
+
+## 5.3.0-beta.3 (2020-09-30)
+
+### Changes
+
+#### Key Bug Fixes
+
+- An issue with package publishing which blocked referencing and use has been fixed.
+
+## 5.3.0-beta.2 (2020-09-28)
+
+### Changes
+
+#### New Features
+
+- The `EventData` representation has been extended with the ability to treat the `Body` as `BinaryData`.  `BinaryData` supports a variety of data transformations and allows the ability to provide serialization logic when sending or receiving events.  Any type that derives from `ObjectSerializer`, such as `JsonObjectSerializer` can be used, with Schema Registry support available via the `SchemaRegistryAvroObjectSerializer`.
+
+- `EventData` has been integrated with the new Schema Registry service, via use of the `ObjectSerializer` with `BinaryData`.
+
+**Note:** Azure Schema Registry is a new hosted schema repository service provided by Azure Event Hubs, and may not yet be available in all regions or Azure clouds.
 
 ## 5.3.0-beta.1 (2020-09-15)
 

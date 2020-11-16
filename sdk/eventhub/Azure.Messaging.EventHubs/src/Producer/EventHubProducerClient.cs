@@ -26,13 +26,24 @@ namespace Azure.Messaging.EventHubs.Producer
     /// </summary>
     ///
     /// <remarks>
-    ///   Allowing automatic routing of partitions is recommended when:
-    ///   <para>- The sending of events needs to be highly available.</para>
-    ///   <para>- The event data should be evenly distributed among all available partitions.</para>
+    ///   <para>
+    ///     Allowing automatic routing of partitions is recommended when:
+    ///     <para>- The sending of events needs to be highly available.</para>
+    ///     <para>- The event data should be evenly distributed among all available partitions.</para>
+    ///   </para>
     ///
-    ///   If no partition is specified, the following rules are used for automatically selecting one:
-    ///   <para>1) Distribute the events equally amongst all available partitions using a round-robin approach.</para>
-    ///   <para>2) If a partition becomes unavailable, the Event Hubs service will automatically detect it and forward the message to another available partition.</para>
+    ///   <para>
+    ///     If no partition is specified, the following rules are used for automatically selecting one:
+    ///     <para>1) Distribute the events equally amongst all available partitions using a round-robin approach.</para>
+    ///     <para>2) If a partition becomes unavailable, the Event Hubs service will automatically detect it and forward the message to another available partition.</para>
+    ///   </para>
+    ///
+    ///   <para>
+    ///     The <see cref="EventHubProducerClient" /> is safe to cache and use for the lifetime of an application, and that is best practice when the application
+    ///     publishes events regularly or semi-regularly.  The producer holds responsibility for efficient resource management, working to keep resource usage low during
+    ///     periods of inactivity and manage health during periods of higher use.  Calling either the <see cref="CloseAsync" /> or <see cref="DisposeAsync" />
+    ///     method as the application is shutting down will ensure that network resources and other unmanaged objects are properly cleaned up.
+    ///   </para>
     /// </remarks>
     ///
     public class EventHubProducerClient : IAsyncDisposable
@@ -234,6 +245,44 @@ namespace Azure.Messaging.EventHubs.Producer
         ///
         /// <param name="fullyQualifiedNamespace">The fully qualified Event Hubs namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
         /// <param name="eventHubName">The name of the specific Event Hub to associate the producer with.</param>
+        /// <param name="credential">The Event Hubs shared access key credential to use for authorization.  Access controls may be specified by the Event Hubs namespace or the requested Event Hub, depending on Azure configuration.</param>
+        /// <param name="clientOptions">A set of options to apply when configuring the producer.</param>
+        ///
+        internal EventHubProducerClient(string fullyQualifiedNamespace,
+                                        string eventHubName,
+                                        EventHubsSharedAccessKeyCredential credential,
+                                        EventHubProducerClientOptions clientOptions = default)
+        {
+            Argument.AssertWellFormedEventHubsNamespace(fullyQualifiedNamespace, nameof(fullyQualifiedNamespace));
+            Argument.AssertNotNullOrEmpty(eventHubName, nameof(eventHubName));
+            Argument.AssertNotNull(credential, nameof(credential));
+
+            clientOptions = clientOptions?.Clone() ?? new EventHubProducerClientOptions();
+
+            OwnsConnection = true;
+            Connection = new EventHubConnection(fullyQualifiedNamespace, eventHubName, credential, clientOptions.ConnectionOptions);
+            Options = clientOptions;
+            RetryPolicy = clientOptions.RetryOptions.ToRetryPolicy();
+
+            PartitionProducerPool = new TransportProducerPool(partitionId =>
+                Connection.CreateTransportProducer(
+                    partitionId,
+                    clientOptions.CreateFeatureFlags(),
+                    Options.GetPublishingOptionsOrDefaultForPartition(partitionId),
+                    RetryPolicy));
+
+            if (RequiresStatefulPartitions(clientOptions))
+            {
+                PartitionState = new ConcurrentDictionary<string, PartitionPublishingState>();
+            }
+        }
+
+        /// <summary>
+        ///   Initializes a new instance of the <see cref="EventHubProducerClient" /> class.
+        /// </summary>
+        ///
+        /// <param name="fullyQualifiedNamespace">The fully qualified Event Hubs namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
+        /// <param name="eventHubName">The name of the specific Event Hub to associate the producer with.</param>
         /// <param name="credential">The Azure managed identity credential to use for authorization.  Access controls may be specified by the Event Hubs namespace or the requested Event Hub, depending on Azure configuration.</param>
         /// <param name="clientOptions">A set of options to apply when configuring the producer.</param>
         ///
@@ -401,8 +450,8 @@ namespace Azure.Messaging.EventHubs.Producer
         ///
         /// <returns>The set of information about the publishing state of the requested partition, within the context of this producer.</returns>
         ///
-        public virtual async Task<PartitionPublishingProperties> ReadPartitionPublishingPropertiesAsync(string partitionId,
-                                                                                                        CancellationToken cancellationToken = default)
+        public virtual async Task<PartitionPublishingProperties> GetPartitionPublishingPropertiesAsync(string partitionId,
+                                                                                                       CancellationToken cancellationToken = default)
         {
             Argument.AssertNotClosed(IsClosed, nameof(EventHubProducerClient));
             Argument.AssertNotNullOrEmpty(partitionId, nameof(partitionId));
@@ -430,14 +479,20 @@ namespace Azure.Messaging.EventHubs.Producer
         }
 
         /// <summary>
-        ///   Sends an event to the associated Event Hub using a batched approach.  If the size of the event exceeds the
-        ///   maximum size of a single batch, an exception will be triggered and the send will fail.
+        ///   Sends the <see cref="EventData" /> to the associated Event Hub.  To avoid the
+        ///   overhead associated with measuring and validating the size in the client, validation will
+        ///   be delegated to the Event Hubs service and is deferred until the operation is invoked.
+        ///   The call will fail if the size of the specified <paramref name="eventData"/> exceeds the
+        ///   maximum allowable size of a single event.
         /// </summary>
         ///
         /// <param name="eventData">The event data to send.</param>
         /// <param name="cancellationToken">An optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         ///
-        /// <returns>A task to be resolved on when the operation has completed.</returns>
+        /// <returns>
+        ///   A task to be resolved on when the operation has completed; if no exception is thrown when awaited, the
+        ///   Event Hubs service has acknowledge receipt and assumed responsibility for delivery of the event.
+        /// </returns>
         ///
         /// <seealso cref="SendAsync(EventData, SendEventOptions, CancellationToken)" />
         /// <seealso cref="SendAsync(IEnumerable{EventData}, CancellationToken)" />
@@ -452,15 +507,21 @@ namespace Azure.Messaging.EventHubs.Producer
         }
 
         /// <summary>
-        ///   Sends an event to the associated Event Hub using a batched approach.  If the size of the event exceeds the
-        ///   maximum size of a single batch, an exception will be triggered and the send will fail.
+        ///   Sends the <see cref="EventData" /> to the associated Event Hub.  To avoid the
+        ///   overhead associated with measuring and validating the size in the client, validation will
+        ///   be delegated to the Event Hubs service and is deferred until the operation is invoked.
+        ///   The call will fail if the size of the specified <paramref name="eventData"/> exceeds the
+        ///   maximum allowable size of a single event.
         /// </summary>
         ///
         /// <param name="eventData">The event data to send.</param>
         /// <param name="options">The set of options to consider when sending this batch.</param>
         /// <param name="cancellationToken">An optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         ///
-        /// <returns>A task to be resolved on when the operation has completed.</returns>
+        /// <returns>
+        ///   A task to be resolved on when the operation has completed; if no exception is thrown when awaited, the
+        ///   Event Hubs service has acknowledge receipt and assumed responsibility for delivery of the event.
+        /// </returns>
         ///
         /// <seealso cref="SendAsync(EventData, CancellationToken)" />
         /// <seealso cref="SendAsync(IEnumerable{EventData}, CancellationToken)" />
@@ -476,19 +537,30 @@ namespace Azure.Messaging.EventHubs.Producer
         }
 
         /// <summary>
-        ///   Sends a set of events to the associated Event Hub using a batched approach.  Because the batch is implicitly created, the size of the event set is not
-        ///   validated until this method is invoked.  The call will fail if the size of the specified set of events exceeds the maximum allowable size of a single batch.
+        ///   Sends a set of events to the associated Event Hub as a single operation.  To avoid the
+        ///   overhead associated with measuring and validating the size in the client, validation will
+        ///   be delegated to the Event Hubs service and is deferred until the operation is invoked.
+        ///   The call will fail if the size of the specified set of events exceeds the maximum allowable
+        ///   size of a single batch.
         /// </summary>
         ///
         /// <param name="eventSet">The set of event data to send.</param>
         /// <param name="cancellationToken">An optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         ///
-        /// <returns>A task to be resolved on when the operation has completed.</returns>
+        /// <returns>
+        ///   A task to be resolved on when the operation has completed; if no exception is thrown when awaited, the
+        ///   Event Hubs service has acknowledge receipt and assumed responsibility for delivery of the set of events.
+        /// </returns>
         ///
         /// <exception cref="EventHubsException">
         ///   Occurs when the set of events exceeds the maximum size allowed in a single batch, as determined by the Event Hubs service.  The <see cref="EventHubsException.Reason" /> will be set to
         ///   <see cref="EventHubsException.FailureReason.MessageSizeExceeded"/> in this case.
         /// </exception>
+        ///
+        /// <remarks>
+        ///   When published, the result is atomic; either all events that belong to the set were successful or all
+        ///   have failed.  Partial success is not possible.
+        /// </remarks>
         ///
         /// <seealso cref="SendAsync(IEnumerable{EventData}, SendEventOptions, CancellationToken)" />
         /// <seealso cref="SendAsync(EventDataBatch, CancellationToken)" />
@@ -498,20 +570,31 @@ namespace Azure.Messaging.EventHubs.Producer
                                             CancellationToken cancellationToken = default) => await SendAsync(eventSet, null, cancellationToken).ConfigureAwait(false);
 
         /// <summary>
-        ///   Sends a set of events to the associated Event Hub using a batched approach.  Because the batch is implicitly created, the size of the event set is not
-        ///   validated until this method is invoked.  The call will fail if the size of the specified set of events exceeds the maximum allowable size of a single batch.
+        ///   Sends a set of events to the associated Event Hub as a single operation.  To avoid the
+        ///   overhead associated with measuring and validating the size in the client, validation will
+        ///   be delegated to the Event Hubs service and is deferred until the operation is invoked.
+        ///   The call will fail if the size of the specified set of events exceeds the maximum allowable
+        ///   size of a single batch.
         /// </summary>
         ///
         /// <param name="eventSet">The set of event data to send.</param>
         /// <param name="options">The set of options to consider when sending this batch.</param>
         /// <param name="cancellationToken">An optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         ///
-        /// <returns>A task to be resolved on when the operation has completed.</returns>
+        /// <returns>
+        ///   A task to be resolved on when the operation has completed; if no exception is thrown when awaited, the
+        ///   Event Hubs service has acknowledge receipt and assumed responsibility for delivery of the set of events.
+        /// </returns>
         ///
         /// <exception cref="EventHubsException">
         ///   Occurs when the set of events exceeds the maximum size allowed in a single batch, as determined by the Event Hubs service.  The <see cref="EventHubsException.Reason" /> will be set to
         ///   <see cref="EventHubsException.FailureReason.MessageSizeExceeded"/> in this case.
         /// </exception>
+        ///
+        /// <remarks>
+        ///   When published, the result is atomic; either all events that belong to the set were successful or all
+        ///   have failed.  Partial success is not possible.
+        /// </remarks>
         ///
         /// <seealso cref="SendAsync(IEnumerable{EventData}, CancellationToken)" />
         /// <seealso cref="SendAsync(EventDataBatch, CancellationToken)" />
@@ -551,7 +634,15 @@ namespace Azure.Messaging.EventHubs.Producer
         /// <param name="eventBatch">The set of event data to send. A batch may be created using <see cref="CreateBatchAsync(CancellationToken)" />.</param>
         /// <param name="cancellationToken">An optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         ///
-        /// <returns>A task to be resolved on when the operation has completed.</returns>
+        /// <returns>
+        ///   A task to be resolved on when the operation has completed; if no exception is thrown when awaited, the
+        ///   Event Hubs service has acknowledge receipt and assumed responsibility for delivery of the batch.
+        /// </returns>
+        ///
+        /// <remarks>
+        ///   When published, the result is atomic; either all events that belong to the batch were successful or all
+        ///   have failed.  Partial success is not possible.
+        /// </remarks>
         ///
         /// <seealso cref="CreateBatchAsync(CancellationToken)" />
         ///
@@ -566,9 +657,9 @@ namespace Azure.Messaging.EventHubs.Producer
                 return;
             }
 
-            var sendTask = (!Options.EnableIdempotentPartitions)
-                ? SendInternalAsync(eventBatch, cancellationToken)
-                : SendIdempotentAsync(eventBatch, cancellationToken);
+            var sendTask = (Options.EnableIdempotentPartitions)
+                ? SendIdempotentAsync(eventBatch, cancellationToken)
+                : SendInternalAsync(eventBatch, cancellationToken);
 
             await sendTask.ConfigureAwait(false);
         }
@@ -884,6 +975,8 @@ namespace Azure.Messaging.EventHubs.Producer
                     {
                         lastSequence = NextSequence(lastSequence);
                         eventData.PendingPublishSequenceNumber = lastSequence;
+                        eventData.PendingProducerGroupId = partitionState.ProducerGroupId;
+                        eventData.PendingProducerOwnerLevel = partitionState.OwnerLevel;
                     }
 
                     // Publish the events.
@@ -893,7 +986,7 @@ namespace Azure.Messaging.EventHubs.Producer
                     EventHubsEventSource.Log.IdempotentSequencePublish(EventHubName, options.PartitionId, firstSequence, lastSequence);
                     await SendInternalAsync(eventSet, options, cancellationToken).ConfigureAwait(false);
 
-                    // Update state and commit the sequencing.
+                    // Update state and commit the state.
 
                     EventHubsEventSource.Log.IdempotentSequenceUpdate(EventHubName, options.PartitionId, partitionState.LastPublishedSequenceNumber.Value, lastSequence);
                     partitionState.LastPublishedSequenceNumber = lastSequence;
@@ -905,11 +998,11 @@ namespace Azure.Messaging.EventHubs.Producer
                 }
                 catch
                 {
-                    // Clear the pending sequence numbers in the face of an exception.
+                    // Clear the pending state in the face of an exception.
 
                     foreach (var eventData in eventSet)
                     {
-                        eventData.PendingPublishSequenceNumber = null;
+                        eventData.ClearPublishingState();
                     }
 
                     throw;
@@ -983,6 +1076,8 @@ namespace Azure.Messaging.EventHubs.Producer
                     {
                         lastSequence = NextSequence(lastSequence);
                         eventData.PendingPublishSequenceNumber = lastSequence;
+                        eventData.PendingProducerGroupId = partitionState.ProducerGroupId;
+                        eventData.PendingProducerOwnerLevel = partitionState.OwnerLevel;
                     }
 
                     // Publish the events.
@@ -1005,7 +1100,7 @@ namespace Azure.Messaging.EventHubs.Producer
 
                     foreach (var eventData in eventSet)
                     {
-                        eventData.PendingPublishSequenceNumber = null;
+                        eventData.ClearPublishingState();
                     }
 
                     throw;

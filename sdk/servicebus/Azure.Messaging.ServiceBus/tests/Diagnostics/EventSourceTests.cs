@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -95,7 +94,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
 
             mockTransportSender.Setup(
                 sender => sender.SendAsync(
-                    It.IsAny<IList<ServiceBusMessage>>(),
+                    It.IsAny<IReadOnlyList<ServiceBusMessage>>(),
                     It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
@@ -184,9 +183,9 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
             };
             mockTransportSender.Setup(
                 sender => sender.ScheduleMessagesAsync(
-                    It.IsAny<IList<ServiceBusMessage>>(),
+                    It.IsAny<IReadOnlyList<ServiceBusMessage>>(),
                     It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new long[] { 1 }));
+                .Returns(Task.FromResult((IReadOnlyList<long>) new List<long> { 1 }));
 
             var scheduleTime = DateTimeOffset.UtcNow.AddMinutes(1);
             await sender.ScheduleMessageAsync(GetMessage(), scheduleTime);
@@ -196,7 +195,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
                     log => log.ScheduleMessagesStart(
                         sender.Identifier,
                         1,
-                        scheduleTime.ToString(CultureInfo.InvariantCulture)),
+                        It.IsAny<string>()),
                 Times.Once);
             mockLogger
                 .Verify(
@@ -223,7 +222,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
 
             mockTransportSender.Setup(
                 sender => sender.ScheduleMessagesAsync(
-                    It.IsAny<IList<ServiceBusMessage>>(),
+                    It.IsAny<IReadOnlyList<ServiceBusMessage>>(),
                     It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
@@ -237,7 +236,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
                     log => log.ScheduleMessagesStart(
                         sender.Identifier,
                         1,
-                        scheduleTime.ToString(CultureInfo.InvariantCulture)),
+                        It.IsAny<string>()),
                 Times.Once);
             mockLogger
                 .Verify(
@@ -1123,7 +1122,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
                 Logger = mockLogger.Object
             };
 
-            await receiver.SetSessionStateAsync(null);
+            await receiver.SetSessionStateAsync(default);
 
             mockLogger
                 .Verify(
@@ -1146,7 +1145,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
             var mockConnection = GetMockConnection(mockTransportReceiver);
             mockTransportReceiver.Setup(
                 transportReceiver => transportReceiver.SetStateAsync(
-                    It.IsAny<byte[]>(),
+                    It.IsAny<BinaryData>(),
                     It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
             var receiver = new ServiceBusSessionReceiver(
@@ -1159,7 +1158,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
             };
 
             Assert.That(
-                async () => await receiver.SetSessionStateAsync(null),
+                async () => await receiver.SetSessionStateAsync(default),
                 Throws.InstanceOf<Exception>());
 
             mockLogger
@@ -1191,7 +1190,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
             var processor = new ServiceBusProcessor(mockConnection.Object, "queueName", false, new ServiceBusPlugin[] { }, new ServiceBusProcessorOptions
             {
                 MaxAutoLockRenewalDuration = TimeSpan.Zero,
-                AutoComplete = false
+                AutoCompleteMessages = false
             })
             {
                 Logger = mockLogger.Object
@@ -1242,7 +1241,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
                 .Returns(new ServiceBusRetryOptions());
             var processor = new ServiceBusProcessor(mockConnection.Object, "queueName", false, new ServiceBusPlugin[] { }, new ServiceBusProcessorOptions
             {
-                AutoComplete = false,
+                AutoCompleteMessages = false,
                 MaxAutoLockRenewalDuration = TimeSpan.Zero
             })
             {
@@ -1276,7 +1275,7 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
                 connection => connection.CreateTransportReceiver(
                     It.IsAny<string>(),
                     It.IsAny<ServiceBusRetryPolicy>(),
-                    It.IsAny<ReceiveMode>(),
+                    It.IsAny<ServiceBusReceiveMode>(),
                     It.IsAny<uint>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
@@ -1293,7 +1292,6 @@ namespace Azure.Messaging.ServiceBus.Tests.Diagnostics
                 .Returns(new ServiceBusRetryOptions());
             mockConnection.Setup(
                 connection => connection.CreateTransportSender(
-                    It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<ServiceBusRetryPolicy>(),
                     It.IsAny<string>()))

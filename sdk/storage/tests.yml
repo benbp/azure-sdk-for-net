@@ -1,31 +1,14 @@
 trigger: none
 
 extends:
-  template: ../../eng/pipelines/templates/jobs/archetype-sdk-tests-multiple.yml
+  template: ../../eng/pipelines/templates/stages/archetype-sdk-tests.yml
   parameters:
-    jobs:
-      # Azure Cloud
-      - ServiceDirectory: storage
-        ScenarioName: AzureCloud
-        BuildInParallel: false
-        TimeoutInMinutes: 300
-        Location: canadacentral
-        SubscriptionConfiguration: $(sub-config-azure-cloud-test-resources-preview)
-        ArmTemplateParameters: "@{ storageEndpointSuffix = 'core.windows.net'; azureAuthorityHost = 'https://login.microsoftonline.com/'; keyVaultEndpointSuffix = '.vault.azure.net' }"
-
-      # AzureUSGovernment
-      - ServiceDirectory: storage
-        ScenarioName: AzureUSGovernment
-        BuildInParallel: false
-        TimeoutInMinutes: 300
-        SubscriptionConfiguration: $(sub-config-gov-test-resources)
-        ArmTemplateParameters: "@{ storageEndpointSuffix = 'core.usgovcloudapi.net'; azureAuthorityHost = 'https://login.microsoftonline.us/'; keyVaultEndpointSuffix = '.vault.usgovcloudapi.net'; enableStorageVersioning = $false }"
-
-      # AzureChinaCloud
-      - ServiceDirectory: storage
-        ScenarioName: AzureChinaCloud
-        BuildInParallel: false
-        TimeoutInMinutes: 300
-        SubscriptionConfiguration: $(sub-config-cn-test-resources)
-        ArmTemplateParameters: "@{ storageEndpointSuffix = 'core.chinacloudapi.cn'; azureAuthorityHost = 'https://login.chinacloudapi.cn/'; keyVaultEndpointSuffix = '.vault.azure.cn'; keyVaultSku = 'standard'; enableStorageVersioning = $false }"
-
+    ServiceDirectory: storage
+    BuildInParallel: true
+    TimeoutInMinutes: 90
+    Location: canadacentral
+    Clouds: Preview
+    TestSetupSteps:
+    - template: /sdk/storage/tests-install-azurite.yml
+    EnvVars:
+      AZURE_ONLY_TEST_LATEST_SERVICE_VERSION: true

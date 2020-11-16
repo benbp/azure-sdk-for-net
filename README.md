@@ -12,10 +12,10 @@ For tutorials, samples, quick starts, and other documentation, go to [Azure for 
 
 ## Packages available
 Each service might have a number of libraries available from each of the following categories:
-* [Client - New Releases](#Client-New-Releases)
-* [Client - Previous Versions](#Client-Previous-Versions)
-* [Management - New Releases](#Management-New-Releases)
-* [Management - Previous Versions](#Management-Previous-Versions)
+* [Client - New Releases](#client-new-releases)
+* [Client - Previous Versions](#client-previous-versions)
+* [Management - New Releases](#management-new-releases)
+* [Management - Previous Versions](#management-previous-versions)
 
 ### Client: New Releases
 
@@ -47,7 +47,7 @@ Documentation and code samples for these libraries can be found [here](https://a
 
 ## Need help?
 
-* For reference documentation visit the [Azure SDK for .NET API Reference](http://aka.ms/net-docs).
+* For reference documentation visit the [Azure SDK for .NET API Reference](https://aka.ms/net-docs).
 * For tutorials, samples, quick starts, and other documentation, go to [Azure for .NET Developers](https://docs.microsoft.com/dotnet/azure/).
 * File an issue via [Github Issues](https://github.com/Azure/azure-sdk-for-net/issues/new/choose).
 * Check [previous questions](https://stackoverflow.com/questions/tagged/azure+.net) or ask new ones on StackOverflow using `azure` and `.net` tags.

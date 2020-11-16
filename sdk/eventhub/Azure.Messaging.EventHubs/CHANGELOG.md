@@ -1,6 +1,49 @@
 # Release History
 
-## 5.3.0-beta.2 (Unreleased)
+## 5.3.0-beta.5 (Unreleased)
+
+
+## 5.3.0-beta.4 (2020-11-10)
+
+### Changes
+
+#### New Features
+
+- Connection strings can now be parsed into their key/value pairs using the `EventHubsConnectionStringProperties` class.
+
+- The body of an event has been moved to the `EventData.EventBody` property and makes use of the new `BinaryData` type.  To preserve backwards compatibility, the existing `EventData.Body` property has been preserved with the current semantics.
+
+- Documentation used for auto-completion via Intellisense and other tools has been enhanced in many areas, addressing gaps and commonly asked questions.
+
+#### Key Bug Fixes
+
+- The `EventHubsException.ToString` result will now properly follow the format of other .NET exception output.
+
+- Signaling the cancellation token will no longer cause the `SendAsync` method of the `EventHubProducerClient` to ignore the result of the service operation if publishing has already completed.
+
+- The calculation for authorization token expiration has been fixed, resulting in fewer token refreshes and network requests.
+
+## 5.3.0-beta.3 (2020-09-30)
+
+### Changes
+
+#### Key Bug Fixes
+
+- An issue with package publishing which blocked referencing and use has been fixed.
+
+## 5.3.0-beta.2 (2020-09-28)
+
+### Changes
+
+#### New Features
+
+- The `EventData` representation has been extended with the ability to treat the `Body` as `BinaryData`.  `BinaryData` supports a variety of data transformations and allows the ability to provide serialization logic when sending or receiving events.  Any type that derives from `ObjectSerializer`, such as `JsonObjectSerializer` can be used, with Schema Registry support available via the `SchemaRegistryAvroObjectSerializer`.
+
+- `EventData` has been integrated with the new Schema Registry service, via use of the `ObjectSerializer` with `BinaryData`.
+
+- When publishing events to Event Hubs, timeouts or other transient failures may introduce ambiguity into the understanding of whether a batch of events was received by the service.  To assist in this scenario, the option to publish events idempotently across all retries of a publish operation has been added to the `EventHubProducerClient`. 
+
+**Note:** The idempotent publishing feature is new to the Event Hubs service, and Azure Schema Registry is a new hosted schema repository service provided by Azure Event Hubs.  Both offerings may not yet be available in all regions or Azure clouds.
 
 ## 5.3.0-beta.1 (2020-09-15)
 

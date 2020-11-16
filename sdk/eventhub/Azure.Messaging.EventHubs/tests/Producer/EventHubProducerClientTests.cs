@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -13,7 +12,6 @@ using Azure.Core;
 using Azure.Messaging.EventHubs.Authorization;
 using Azure.Messaging.EventHubs.Core;
 using Azure.Messaging.EventHubs.Producer;
-using Microsoft.Azure.Amqp;
 using Moq;
 using NUnit.Framework;
 
@@ -96,7 +94,8 @@ namespace Azure.Messaging.EventHubs.Tests
         public void ConstructorValidatesTheNamespace(string constructorArgument)
         {
             var credential = new Mock<EventHubTokenCredential>(Mock.Of<TokenCredential>(), "{namespace}.servicebus.windows.net");
-            Assert.That(() => new EventHubProducerClient(constructorArgument, "dummy", credential.Object), Throws.InstanceOf<ArgumentException>());
+            Assert.That(() => new EventHubProducerClient(constructorArgument, "dummy", credential.Object), Throws.InstanceOf<ArgumentException>(), "The token credential constructor should validate.");
+            Assert.That(() => new EventHubProducerClient(constructorArgument, "dummy", new EventHubsSharedAccessKeyCredential("key", "value")), Throws.InstanceOf<ArgumentException>(), "The shared key credential constructor should validate.");
         }
 
         /// <summary>
@@ -109,7 +108,8 @@ namespace Azure.Messaging.EventHubs.Tests
         public void ConstructorValidatesTheEventHub(string constructorArgument)
         {
             var credential = new Mock<EventHubTokenCredential>(Mock.Of<TokenCredential>(), "{namespace}.servicebus.windows.net");
-            Assert.That(() => new EventHubProducerClient("namespace", constructorArgument, credential.Object), Throws.InstanceOf<ArgumentException>());
+            Assert.That(() => new EventHubProducerClient("namespace", constructorArgument, credential.Object), Throws.InstanceOf<ArgumentException>(), "The token credential constructor should validate.");
+            Assert.That(() => new EventHubProducerClient("namespace", constructorArgument, new EventHubsSharedAccessKeyCredential("key", "value")), Throws.InstanceOf<ArgumentException>(), "The shared key credential constructor should validate.");
         }
 
         /// <summary>
@@ -119,7 +119,8 @@ namespace Azure.Messaging.EventHubs.Tests
         [Test]
         public void ConstructorValidatesTheCredential()
         {
-            Assert.That(() => new EventHubProducerClient("namespace", "hubName", default(TokenCredential)), Throws.ArgumentNullException);
+            Assert.That(() => new EventHubProducerClient("namespace", "hubName", default(TokenCredential)), Throws.ArgumentNullException, "The token credential constructor should validate.");
+            Assert.That(() => new EventHubProducerClient("namespace", "hubName", default(EventHubsSharedAccessKeyCredential)), Throws.ArgumentNullException, "The sharedKey credential constructor should validate.");
         }
 
         /// <summary>
@@ -152,12 +153,27 @@ namespace Azure.Messaging.EventHubs.Tests
         /// </summary>
         ///
         [Test]
-        public void ExpandedConstructorSetsTheRetryPolicy()
+        public void TokenCredentialConstructorSetsTheRetryPolicy()
         {
             var expected = Mock.Of<EventHubsRetryPolicy>();
             var credential = new Mock<EventHubTokenCredential>(Mock.Of<TokenCredential>(), "{namespace}.servicebus.windows.net");
             var options = new EventHubProducerClientOptions { RetryOptions = new EventHubsRetryOptions { CustomRetryPolicy = expected } };
             var producer = new EventHubProducerClient("namespace", "eventHub", credential.Object, options);
+
+            Assert.That(GetRetryPolicy(producer), Is.SameAs(expected));
+        }
+
+        /// <summary>
+        ///   Verifies functionality of the constructor.
+        /// </summary>
+        ///
+        [Test]
+        public void SharedKeyCredentialConstructorSetsTheRetryPolicy()
+        {
+            var expected = Mock.Of<EventHubsRetryPolicy>();
+            var credential = new EventHubsSharedAccessKeyCredential("key", "value");
+            var options = new EventHubProducerClientOptions { RetryOptions = new EventHubsRetryOptions { CustomRetryPolicy = expected } };
+            var producer = new EventHubProducerClient("namespace", "eventHub", credential, options);
 
             Assert.That(GetRetryPolicy(producer), Is.SameAs(expected));
         }
@@ -201,11 +217,30 @@ namespace Azure.Messaging.EventHubs.Tests
         /// </summary>
         ///
         [Test]
-        public void ExpandedConstructorCreatesDefaultOptions()
+        public void TokenCredentailsConstructorCreatesDefaultOptions()
         {
             var credential = new Mock<EventHubTokenCredential>(Mock.Of<TokenCredential>(), "{namespace}.servicebus.windows.net");
             var expected = new EventHubProducerClientOptions().RetryOptions;
             var producer = new EventHubProducerClient("namespace", "eventHub", credential.Object);
+
+            var policy = GetRetryPolicy(producer);
+            Assert.That(policy, Is.Not.Null, "There should have been a retry policy set.");
+            Assert.That(policy, Is.InstanceOf<BasicRetryPolicy>(), "The default retry policy should be a basic policy.");
+
+            var actual = ((BasicRetryPolicy)policy).Options;
+            Assert.That(actual.IsEquivalentTo(expected), Is.True, "The default retry policy should be based on the default retry options.");
+        }
+
+        /// <summary>
+        ///   Verifies functionality of the constructor.
+        /// </summary>
+        ///
+        [Test]
+        public void SharedKeyCredentailsConstructorCreatesDefaultOptions()
+        {
+            var credential = new EventHubsSharedAccessKeyCredential("key", "value");
+            var expected = new EventHubProducerClientOptions().RetryOptions;
+            var producer = new EventHubProducerClient("namespace", "eventHub", credential);
 
             var policy = GetRetryPolicy(producer);
             Assert.That(policy, Is.Not.Null, "There should have been a retry policy set.");
@@ -314,7 +349,7 @@ namespace Azure.Messaging.EventHubs.Tests
         }
 
         /// <summary>
-        ///   Verifies functionality of the <see cref="EventHubProducerClient.ReadPartitionPublishingPropertiesAsync" />
+        ///   Verifies functionality of the <see cref="EventHubProducerClient.GetPartitionPublishingPropertiesAsync" />
         ///   method.
         /// </summary>
         ///
@@ -328,11 +363,11 @@ namespace Azure.Messaging.EventHubs.Tests
             var producer = new EventHubProducerClient(connectionString);
             await producer.CloseAsync(cancellationSource.Token);
 
-            Assert.That(async () => await producer.ReadPartitionPublishingPropertiesAsync("0", cancellationSource.Token), Throws.InstanceOf<EventHubsException>());
+            Assert.That(async () => await producer.GetPartitionPublishingPropertiesAsync("0", cancellationSource.Token), Throws.InstanceOf<EventHubsException>());
         }
 
         /// <summary>
-        ///   Verifies functionality of the <see cref="EventHubProducerClient.ReadPartitionPublishingPropertiesAsync" />
+        ///   Verifies functionality of the <see cref="EventHubProducerClient.GetPartitionPublishingPropertiesAsync" />
         ///   method.
         /// </summary>
         ///
@@ -345,11 +380,11 @@ namespace Azure.Messaging.EventHubs.Tests
             cancellationSource.CancelAfter(EventHubsTestEnvironment.Instance.TestExecutionTimeLimit);
 
             var producer = new EventHubProducerClient(new MockConnection());
-            Assert.That(async () => await producer.ReadPartitionPublishingPropertiesAsync(partitionId, cancellationSource.Token), Throws.InstanceOf<ArgumentException>());
+            Assert.That(async () => await producer.GetPartitionPublishingPropertiesAsync(partitionId, cancellationSource.Token), Throws.InstanceOf<ArgumentException>());
         }
 
         /// <summary>
-        ///   Verifies functionality of the <see cref="EventHubProducerClient.ReadPartitionPublishingPropertiesAsync" />
+        ///   Verifies functionality of the <see cref="EventHubProducerClient.GetPartitionPublishingPropertiesAsync" />
         ///   method.
         /// </summary>
         ///
@@ -389,7 +424,7 @@ namespace Azure.Messaging.EventHubs.Tests
             using var cancellationSource = new CancellationTokenSource();
             cancellationSource.CancelAfter(EventHubsTestEnvironment.Instance.TestExecutionTimeLimit);
 
-            await producer.ReadPartitionPublishingPropertiesAsync(expectedPartition, cancellationSource.Token);
+            await producer.GetPartitionPublishingPropertiesAsync(expectedPartition, cancellationSource.Token);
 
             Assert.That(partitionStateCollection.TryGetValue(expectedPartition, out var partitionState), Is.True, "The state collection should have an entry for the partition.");
             Assert.That(partitionState.ProducerGroupId, Is.EqualTo(expectedProperties.ProducerGroupId), "The producer group should match.");
@@ -400,7 +435,7 @@ namespace Azure.Messaging.EventHubs.Tests
         }
 
         /// <summary>
-        ///   Verifies functionality of the <see cref="EventHubProducerClient.ReadPartitionPublishingPropertiesAsync" />
+        ///   Verifies functionality of the <see cref="EventHubProducerClient.GetPartitionPublishingPropertiesAsync" />
         ///   method.
         /// </summary>
         ///
@@ -430,7 +465,7 @@ namespace Azure.Messaging.EventHubs.Tests
             using var cancellationSource = new CancellationTokenSource();
             cancellationSource.CancelAfter(EventHubsTestEnvironment.Instance.TestExecutionTimeLimit);
 
-            var readProperties = await producer.ReadPartitionPublishingPropertiesAsync(expectedPartition, cancellationSource.Token);
+            var readProperties = await producer.GetPartitionPublishingPropertiesAsync(expectedPartition, cancellationSource.Token);
 
             Assert.That(readProperties, Is.Not.Null, "The read properties should have been created.");
             Assert.That(readProperties.ProducerGroupId, Is.EqualTo(expectedProperties.ProducerGroupId), "The producer group should match.");
@@ -2651,7 +2686,7 @@ namespace Azure.Messaging.EventHubs.Tests
 
             public override long MaximumSizeInBytes { get; }
             public override long SizeInBytes { get; }
-            public override bool ReserveSpaceForSequenceNumber { get; }
+            public override TransportProducerFeatures ActiveFeatures { get; }
             public override int Count => Events.Count;
             public override IEnumerable<T> AsEnumerable<T>() => (IEnumerable<T>)Events;
             public override void Clear() => Events.Clear();

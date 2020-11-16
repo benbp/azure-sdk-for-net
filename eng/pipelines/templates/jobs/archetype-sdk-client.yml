@@ -5,6 +5,15 @@ jobs:
     pool:
       vmImage: windows-2019
     steps:
+      - ${{if eq(parameters.TestPipeline, 'true')}}:
+        - task: PowerShell@2
+          displayName: Prep template pipeline for release
+          condition: succeeded()
+          inputs:
+            pwsh: true
+            workingDirectory: $(Build.SourcesDirectory)
+            filePath: eng/scripts/SetTestPipelineVersion.ps1
+            arguments: '-BuildNumber $(Build.BuildNumber)'
       - pwsh: |
           echo "##vso[build.addbuildtag]Scheduled"
         displayName: "Tag scheduled builds"
@@ -26,7 +35,8 @@ jobs:
           versionSpec: '3.6'
       - script: >-
           dotnet pack eng/service.proj -warnaserror
-          /p:ServiceDirectory=${{parameters.ServiceToBuild}}
+          /p:ServiceDirectory=${{ parameters.ServiceDirectory }}
+          /p:IncludeTests=false
           /p:PublicSign=false $(VersioningProperties)
           /p:Configuration=$(BuildConfiguration)
           /p:CommitSHA=$(Build.SourceVersion)
@@ -48,7 +58,7 @@ jobs:
           artifactName: packages
           path: $(Build.ArtifactStagingDirectory)
   - job: "Analyze"
-    condition: ne(variables['Skip.Analyze'], true)
+    condition: and(succeededOrFailed(), ne(variables['Skip.Analyze'], true))
     variables:
       - template: ../variables/globals.yml
     pool:
@@ -60,7 +70,11 @@ jobs:
           versionSpec: "3.6"
       - template: /eng/common/pipelines/templates/steps/verify-links.yml
         parameters:
-          Directory: sdk/${{ parameters.ServiceDirectory }}
+          ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+            Directory: ''
+            Urls: (eng/common/scripts/get-markdown-files-from-changed-files.ps1)
+          ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+            Directory: sdk/${{ parameters.ServiceDirectory }}
           CheckLinkGuidance: $true
       - script: |
           pip install setuptools wheel
@@ -72,7 +86,7 @@ jobs:
           SourceDirectory: $(Build.SourcesDirectory)
       - task: NodeTool@0
         inputs:
-          versionSpec: '13.13.0'
+          versionSpec: '14.x'
         displayName: 'Install NodeJS'
       - task: PowerShell@2
         displayName: "Verify generated code"
@@ -82,7 +96,7 @@ jobs:
           DOTNET_MULTILEVEL_LOOKUP: 0
         inputs:
           filePath: "eng/scripts/CodeChecks.ps1"
-          arguments: -ServiceDirectory ${{parameters.ServiceToBuild}}
+          arguments: -ServiceDirectory ${{parameters.ServiceDirectory}}
           pwsh: true
           failOnStderr:  false
       - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
@@ -93,7 +107,7 @@ jobs:
           ignoreDirectories: "sdk/storage/Azure.Storage.Common/swagger/Generator"
         condition: and(succeededOrFailed(), ne(variables['Build.Reason'],'PullRequest'))
   - job: "Test"
-    condition: ne(variables['Skip.Test'], true)
+    condition: and(succeededOrFailed(), ne(variables['Skip.Test'], true))
     variables:
       - template: ../variables/globals.yml
     strategy:
@@ -105,8 +119,6 @@ jobs:
         Windows_NetCoreApp:
           OSVmImage: "windows-2019"
           TestTargetFramework: netcoreapp2.1
-          ${{ if eq(variables['System.TeamProject'], 'internal') }}:
-            CollectCoverage: true
         Windows_NetCoreApp_ProjectReferences:
           OSVmImage: "windows-2019"
           TestTargetFramework: netcoreapp2.1
@@ -125,10 +137,14 @@ jobs:
       vmImage: "$(OSVmImage)"
     steps:
       - template: /eng/common/pipelines/templates/steps/verify-agent-os.yml
+      - ${{ each step in parameters.TestSetupSteps }}:
+        - ${{ each pair in step }}:
+            ${{ pair.key }}: ${{ pair.value }}
       - script: >-
           dotnet test eng/service.proj --filter TestCategory!=Live --framework $(TestTargetFramework)
           --logger "trx;LogFileName=$(TestTargetFramework).trx" --logger:"console;verbosity=normal"
-          /p:ServiceDirectory=${{parameters.ServiceToBuild}} /p:IncludeSrc=false /p:IncludeSamples=false
+          /p:ServiceDirectory=${{parameters.ServiceToTest}}
+          /p:IncludeSrc=false /p:IncludeSamples=false /p:IncludePerf=false /p:IncludeStress=false
           /p:Configuration=$(BuildConfiguration) $(ConvertToProjectReferenceOption) /p:CollectCoverage=$(CollectCoverage)
         displayName: "Build & Test ($(TestTargetFramework))"
         env:
