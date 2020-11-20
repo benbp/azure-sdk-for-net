@@ -1,0 +1,18 @@
+jobs:
+  - job: generate_matrix
+    steps:
+    - pwsh: |
+        /eng/scripts/Create-JobMatrix -Parameters @{} -Variables @{}
+      name: generate_job_matrix
+      displayName: Generate Job Matrix
+
+  - job:
+    dependsOn: generate_matrix
+    strategy:
+      maxParallel: 0
+      matrix: $[ dependencies.generate_matrix.outputs['generate_job_matrix.matrix'] ]
+    steps:
+      - pwsh: |
+          Write-Host "BBP JOB"
+          Write-Host $env:TestVariable
+          Write-Host $env:Agent.JobName

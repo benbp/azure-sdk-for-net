@@ -37,10 +37,18 @@ parameters:
   default: false
 
 jobs:
+  - job: generate_matrix
+    steps:
+    - pwsh: |
+        /eng/scripts/Create-JobMatrix -Parameters ${{ parameters }} -Variables $[ variables ]
+      name: generate_job_matrix
+      displayName: Generate Job Matrix
+
   - job:
+    dependsOn: generate_matrix
     strategy:
       maxParallel: ${{ parameters.MaxParallel }}
-      matrix: ${{ parameters.Platforms }}
+      matrix: $[ dependencies.generate_matrix.outputs['generate_job_matrix.matrix'] ]
 
     variables:
       - template: ../variables/globals.yml
