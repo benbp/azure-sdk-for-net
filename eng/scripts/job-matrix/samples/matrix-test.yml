@@ -13,10 +13,10 @@ jobs:
             Write-Output "SPARSE MATRIX JOB PARAMETERS"
             Write-Output $(Agent.JobName)
             Write-Output "-----------------"
-            Write-Output $(operatingSystem)
-            Write-Output $(framework)
+            Write-Output $env:operatingSystem
+            Write-Output $env:framework
             try {
-              Write-Output $(additionalTestArguments)
+              Write-Output $env:additionalTestArguments
             } catch {}
           displayName: Print matrix job variables
           env:
