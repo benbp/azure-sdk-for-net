@@ -9,7 +9,7 @@ jobs:
           Path: eng/scripts/job-matrix/samples/matrix.json
           Selection: all
       steps:
-        - pwsh:
+        - pwsh: |
             Write-Output "SPARSE MATRIX JOB PARAMETERS"
             Write-Output $(Agent.JobName)
             Write-Output "-----------------"
