@@ -9,20 +9,20 @@ parameters:
     type: object
 
 jobs:
-  - {{ each config in parameters.MatrixConfigs }}:
+  - ${{ each config in parameters.MatrixConfigs }}:
     - job: generate_matrix_${{ config.Name }}
+      displayName: Generate ${{ config.Name }} matrix
       steps:
-      - task: PowerShell@2
-        inputs:
-          name: generate_job_matrix_${{ config.Name }}
+        - task: PowerShell@2
           displayName: Generate ${{ config.Name }} Job Matrix
-          script: |
-            eng/scripts/matrix/Create-JobMatrix.ps1 `
-              -ConfigPath ${{ config.Path }} `
-              -Selection ${{ config.Selection }} `
-              -MatrixVariableName ${{ config.Name }}
+          inputs:
+            workingDirectory: $(Build.SourcesDirectory)
+            name: generate_job_matrix_${{ config.Name }}
+            filePath: eng/scripts/job-matrix/Create-JobMatrix.ps1
+            arguments: -ConfigPath ${{ config.Path }} -Selection ${{ config.Selection }}
 
     - job:
+      displayName: Print ${{ config.Name }}
       dependsOn: generate_matrix_${{ config.Name }}
       strategy:
         maxParallel: 0
