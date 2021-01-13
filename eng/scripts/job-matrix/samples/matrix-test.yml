@@ -19,6 +19,10 @@ jobs:
               Write-Output $(additionalTestArguments)
             } catch {}
           displayName: Print matrix job variables
+          env:
+            operatingSystem: $(operatingSystem)
+            framework: $(framework)
+            additionalTestArguments: $(additionalTestArguments)
         - pwsh: |
             Write-Output "Success"
           displayName: OS condition example
