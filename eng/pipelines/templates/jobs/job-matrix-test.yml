@@ -1,0 +1,33 @@
+jobs:
+  - job: generate_matrix
+    steps:
+      - task: PowerShell@2
+        inputs:
+          workingDirectory: $(Build.SourcesDirectory)
+          name: generate_job_matrix
+          filePath: eng/scripts/job-matrix/Create-JobMatrix.ps1
+          arguments: -ConfigPath eng/scripts/job-matrix/samples/matrix.json -Selection all
+
+  - job:
+    dependsOn: generate_matrix
+    strategy:
+      maxParallel: 0
+      matrix: $[ dependencies.generate_matrix.outputs['generate_job_matrix.matrix'] ]
+    steps:
+      - pwsh: |
+          Write-Output "SPARSE MATRIX JOB PARAMETERS"
+          Write-Output $(Agent.JobName)
+          Write-Output "-----------------"
+          Write-Output $env:operatingSystem
+          Write-Output $env:framework
+          try {
+            Write-Output $env:additionalTestArguments
+          } catch {}
+        env:
+          operatingSystem: $(operatingSystem)
+          framework: $(framework)
+          additionalTestArguments: $(additionalTestArguments)
+      - pwsh: |
+          Write-Output "Success"
+        displayName: OS condition example
+        condition: and(succeededOrFailed(), contains(variables['operatingSystem'], 'windows'))
