@@ -7,7 +7,7 @@ parameters:
     default:
       - Name: base_product_matrix
         Path: eng/scripts/job-matrix/samples/matrix.json
-        Selection: sparse
+        Selection: all
 
 jobs:
   - ${{ each config in parameters.MatrixConfigs }}:
