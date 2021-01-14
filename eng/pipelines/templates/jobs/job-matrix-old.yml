@@ -5,6 +5,7 @@ parameters:
 
 jobs:
   - job: generate_matrix
+    displayName: Generate test matrix
     steps:
     - pwsh: |
         eng/scripts/job-matrix/Create-JobMatrix.ps1 `
