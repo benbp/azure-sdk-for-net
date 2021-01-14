@@ -11,6 +11,23 @@ parameters:
       - Name: sparse_product_matrix
         Path: eng/scripts/job-matrix/samples/matrix.json
         Selection: sparse
+  - name: steps
+    type: object
+    default:
+      - pwsh: |
+          Write-Output "SPARSE MATRIX JOB PARAMETERS"
+          Write-Output $(Agent.JobName)
+          Write-Output "-----------------"
+          Write-Output $(operatingSystem)
+          Write-Output $(framework)
+          try {
+            Write-Output $(additionalTestArguments)
+          } catch {}
+        displayName: Print matrix job variables
+      - pwsh: |
+          Write-Output "Success"
+        displayName: OS condition example
+        condition: and(succeededOrFailed(), contains(variables['operatingSystem'], 'windows'))
 
 jobs:
   - ${{ each config in parameters.MatrixConfigs }}:
@@ -29,17 +46,4 @@ jobs:
         maxParallel: 0
         matrix: $[ dependencies.generate_matrix_${{ config.Name }}.outputs['generate_job_matrix_${{ config.Name }}.matrix'] ]
       steps:
-        - pwsh: |
-            Write-Output "SPARSE MATRIX JOB PARAMETERS"
-            Write-Output $(Agent.JobName)
-            Write-Output "-----------------"
-            Write-Output $(operatingSystem)
-            Write-Output $(framework)
-            try {
-              Write-Output $(additionalTestArguments)
-            } catch {}
-          displayName: Print matrix job variables
-        - pwsh: |
-            Write-Output "Success"
-          displayName: OS condition example
-          condition: and(succeededOrFailed(), contains(variables['operatingSystem'], 'windows'))
+        - ${{ parameters.steps }}
