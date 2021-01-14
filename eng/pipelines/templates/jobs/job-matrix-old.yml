@@ -7,24 +7,24 @@ parameters:
     default:
       - Name: base_product_matrix
         Path: eng/scripts/job-matrix/samples/matrix.json
-        Selection: all
+        Selection: sparse
 
 jobs:
   - ${{ each config in parameters.MatrixConfigs }}:
-    - job: generate_matrix
+    - job: generate_matrix_${{ config.Name }}
       displayName: Generate test matrix ${{ config.Name }}
       steps:
       - pwsh: |
           eng/scripts/job-matrix/Create-JobMatrix.ps1 `
             -ConfigPath ${{ config.Path }} `
             -Selection ${{ config.Selection }}
-        name: generate_job_matrix
+        name: generate_job_matrix_${{ config.Name }}
         displayName: Generate Job Matrix
     - job:
-      dependsOn: generate_matrix
+      dependsOn: generate_matrix_${{ config.Name }}
       strategy:
         maxParallel: 0
-        matrix: $[ dependencies.generate_matrix.outputs['generate_job_matrix.matrix'] ]
+        matrix: $[ dependencies.generate_matrix_${{ config.Name }}.outputs['generate_job_matrix_${{ config.Name }}.matrix'] ]
       steps:
         - pwsh: |
             Write-Output "SPARSE MATRIX JOB PARAMETERS"
