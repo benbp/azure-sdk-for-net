@@ -1,7 +1,4 @@
 parameters:
-  - name: PlatformConfig
-    type: string
-    default: 'eng/scripts/job-matrix/samples/matrix.json'
   - name: MatrixConfigs
     type: object
     default:
