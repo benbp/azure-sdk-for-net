@@ -2,34 +2,41 @@ parameters:
   - name: PlatformConfig
     type: string
     default: 'eng/scripts/job-matrix/samples/matrix.json'
+  - name: MatrixConfigs
+    type: object
+    default:
+      - Name: base_product_matrix
+        Path: eng/scripts/job-matrix/samples/matrix.json
+        Selection: sparse
 
 jobs:
-  - job: generate_matrix
-    displayName: Generate test matrix
-    steps:
-    - pwsh: |
-        eng/scripts/job-matrix/Create-JobMatrix.ps1 `
-          -ConfigPath ${{ parameters.PlatformConfig }} `
-          -Selection sparse
-      name: generate_job_matrix
-      displayName: Generate Job Matrix
-  - job:
-    dependsOn: generate_matrix
-    strategy:
-      maxParallel: 0
-      matrix: $[ dependencies.generate_matrix.outputs['generate_job_matrix.matrix'] ]
-    steps:
+  - ${{ each config in parameters.MatrixConfigs }}:
+    - job: generate_matrix
+      displayName: Generate test matrix ${{ config.Name }}
+      steps:
       - pwsh: |
-          Write-Output "SPARSE MATRIX JOB PARAMETERS"
-          Write-Output $(Agent.JobName)
-          Write-Output "-----------------"
-          Write-Output $(operatingSystem)
-          Write-Output $(framework)
-          try {
-            Write-Output $(additionalTestArguments)
-          } catch {}
-        displayName: Print matrix job variables
-      - pwsh: |
-          Write-Output "Success"
-        displayName: OS condition example
-        condition: and(succeededOrFailed(), contains(variables['operatingSystem'], 'windows'))
+          eng/scripts/job-matrix/Create-JobMatrix.ps1 `
+            -ConfigPath ${{ config.Path }} `
+            -Selection ${{ config.Selection }}
+        name: generate_job_matrix
+        displayName: Generate Job Matrix
+    - job:
+      dependsOn: generate_matrix
+      strategy:
+        maxParallel: 0
+        matrix: $[ dependencies.generate_matrix.outputs['generate_job_matrix.matrix'] ]
+      steps:
+        - pwsh: |
+            Write-Output "SPARSE MATRIX JOB PARAMETERS"
+            Write-Output $(Agent.JobName)
+            Write-Output "-----------------"
+            Write-Output $(operatingSystem)
+            Write-Output $(framework)
+            try {
+              Write-Output $(additionalTestArguments)
+            } catch {}
+          displayName: Print matrix job variables
+        - pwsh: |
+            Write-Output "Success"
+          displayName: OS condition example
+          condition: and(succeededOrFailed(), contains(variables['operatingSystem'], 'windows'))
