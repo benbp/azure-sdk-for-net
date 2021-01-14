@@ -1,5 +1,5 @@
 jobs:
-  - template: /eng/pipelines/templates/jobs/job-matrix-old.yml
+  - template: /eng/pipelines/templates/jobs/job-matrix.yml
     parameters:
       MatrixConfigs:
         - Name: base_product_matrix
@@ -10,7 +10,7 @@ jobs:
           Selection: sparse
       steps:
         - pwsh: |
-            Write-Output "SPARSE MATRIX JOB PARAMETERS"
+            Write-Output "MATRIX JOB PARAMETERS"
             Write-Output $(Agent.JobName)
             Write-Output "-----------------"
             Write-Output $(operatingSystem)

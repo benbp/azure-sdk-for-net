@@ -3,7 +3,7 @@ parameters:
     type: object
     # Example:
     #   - Name: base_product_matrix
-    #     Path: /eng/pipelines/matrix.json
+    #     Path: eng/pipelines/matrix.json
     #     Selection: sparse
   - name: steps
     type: object
@@ -13,14 +13,12 @@ jobs:
     - job: generate_matrix_${{ config.Name }}
       displayName: Generate ${{ config.Name }} matrix
       steps:
-        - task: PowerShell@2
-          displayName: Generate ${{ config.Name }} Job Matrix
-          inputs:
-            pwsh: true
-            workingDirectory: $(Build.SourcesDirectory)
-            name: generate_job_matrix_${{ config.Name }}
-            filePath: eng/scripts/job-matrix/Create-JobMatrix.ps1
-            arguments: -ConfigPath ${{ config.Path }} -Selection ${{ config.Selection }}
+        - pwsh: |
+            eng/scripts/job-matrix/Create-JobMatrix.ps1 `
+              -ConfigPath ${{ config.Path }} `
+              -Selection ${{ config.Selection }}
+          name: generate_job_matrix_${{ config.Name }}
+          displayName: Generate Job Matrix
 
     - job:
       displayName: Print ${{ config.Name }}
