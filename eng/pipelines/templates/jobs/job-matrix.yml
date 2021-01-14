@@ -9,26 +9,6 @@ parameters:
     type: object
 
 jobs:
-  - job: generate_matrix
-    displayName: Generate test matrix
-    steps:
-      - task: PowerShell@2
-        displayName: Generate test job matrix
-        inputs:
-          workingDirectory: $(Build.SourcesDirectory)
-          name: generate_job_matrix
-          filePath: eng/scripts/job-matrix/Create-JobMatrix.ps1
-          arguments: -ConfigPath eng/scripts/job-matrix/samples/matrix.json -Selection all
-
-  - job:
-    displayName: Print config
-    dependsOn: generate_matrix
-    strategy:
-      maxParallel: 0
-      matrix: $[ dependencies.generate_matrix.outputs['generate_job_matrix.matrix'] ]
-    steps:
-      - ${{ parameters.steps }}
-
   - ${{ each config in parameters.MatrixConfigs }}:
     - job: generate_matrix_${{ config.Name }}
       displayName: Generate ${{ config.Name }} matrix
@@ -36,6 +16,7 @@ jobs:
         - task: PowerShell@2
           displayName: Generate ${{ config.Name }} Job Matrix
           inputs:
+            pwsh: true
             workingDirectory: $(Build.SourcesDirectory)
             name: generate_job_matrix_${{ config.Name }}
             filePath: eng/scripts/job-matrix/Create-JobMatrix.ps1
