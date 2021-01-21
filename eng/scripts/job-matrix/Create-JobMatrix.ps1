@@ -15,7 +15,7 @@ param (
     [Parameter(Mandatory=$False)][array] $Filters
 )
 
-Import-Module $PSScriptRoot/job-matrix-functions.psm1
+. $PSScriptRoot/job-matrix-functions.ps1
 
 $config = GetMatrixConfigFromJson (Get-Content $ConfigPath)
 

@@ -2,9 +2,6 @@
   "displayNames": {
     "/p:UseProjectReferenceToAzureClients=true": "UseProjectRef"
   },
-  "pool": {
-    "pipeline": "foo"
-  },
   "matrix": {
     "operatingSystem": [
       "windows-2019",

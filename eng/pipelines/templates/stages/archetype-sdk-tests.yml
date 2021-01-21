@@ -55,7 +55,7 @@ parameters:
 - name: MatrixConfigs
   type: object
   default:
-    - Name: base_product_matrix
+    - Name: NET live test base
       Path: eng/pipelines/templates/stages/platform-matrix.json
       Selection: sparse
 - name: AdditionalMatrixConfigs

@@ -69,7 +69,7 @@ function FilterMatrix([array]$matrix, [array]$filters) {
 }
 
 function MatchesFilters([hashtable]$entry, [array]$filters) {
-    $nonMatching = $filters | ForEach-Object {
+    $nonMatching = $filters | Where-Object { $null -ne $_ } | ForEach-Object {
         $key, $regex, $excludeKey = ParseFilter $_
         if ($excludeKey) {
             if (-not $entry.parameters.Contains($key)) {
@@ -94,7 +94,7 @@ function ParseFilter([string]$filter) {
         $regex = $matches[2]
         return $key, $regex, $false
     } else {
-        throw "Invalid filter: `"$filter`", expected !<key> or <key>=<regex> format"
+        throw "Invalid filter: `"${filter}`", expected !<key> or <key>=<regex> format"
     }
 }
 
