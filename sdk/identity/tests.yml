@@ -4,7 +4,7 @@ resources:
   containers:
     - container: 'ubuntu_netcore_keyring'
       # See ./eng/containers/UbuntuNetCoreKeyring/Dockerfile for tool versions
-      image: 'azsdkengsys.azurecr.io/dotnet/ubuntu_netcore_keyring:1346631'
+      image: 'azsdkengsys.azurecr.io/dotnet/ubuntu_netcore_keyring:1346950'
       endpoint: 'azsdkengsys'
       options: -ti --cap-add=IPC_LOCK
 
