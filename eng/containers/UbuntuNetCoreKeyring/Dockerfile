@@ -20,8 +20,9 @@ ENV \
     DOTNET_ROOT=/usr/share/dotnet  \
     PATH=$PATH:usr/share/dotnet    
 
-# Install GNOME keyring
-RUN apt-get update \
+# Install GNOME keyring, git
+RUN apt-add-repository ppa:git-core/ppa \
+    && apt-get update \
     && apt-get install -y \
         libsecret-1-dev \
         dbus-x11 \
