@@ -1,0 +1,34 @@
+{{- include "stress-test-addons.env-job-template.from-pod" (list . "stress.core-ci-loop") -}}
+{{- define "stress.core-ci-loop" -}}
+metadata:
+  labels:
+    testName: "core-ci-loop"
+spec:
+  containers:
+    - name: coreci
+      image: {{ .Values.image }}
+      command: ['bash', '-c']
+      args:
+        - |
+            mkdir -p /mnt/share/bebrodercore
+            &&
+            dotnet test
+            /app/eng/service.proj
+            --filter "(TestCategory!=Manually) & (TestCategory!=Live)"
+            --framework
+            /p:ServiceDirectory=/app/sdk/core/
+            /p:IncludeSrc=false
+            /p:IncludeSamples=false
+            /p:IncludePerf=false
+            /p:IncludeStress=false
+            /p:RunApiCompat=false
+            /p:InheritDocEnabled=false
+            /p:Configuration=Release
+            /p:CollectCoverage=false
+            /p:EnableSourceLink=false
+            /p:UseProjectReferenceToAzureClients=true
+            net6.0
+            --logger "trx;LogFileName=/mnt/share/bebrodercore/net6.0.trx"
+            --logger:"console;verbosity=normal" /p:SDKType=all
+      {{- include "stress-test-addons.container-env" . | nindent 6 }}
+{{- end -}}
