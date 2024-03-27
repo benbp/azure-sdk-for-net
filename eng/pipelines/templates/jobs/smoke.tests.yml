@@ -11,6 +11,9 @@ parameters:
   - name: TimeoutInMinutes
     type: number
     default: 60
+  - name: DependsOn
+    type: object
+    default: []
   - name: MatrixConfigs
     type: object
     default:
